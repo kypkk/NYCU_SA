@@ -63,6 +63,9 @@ while [ $i -lt $length ]; do
     md5=$(echo $files| yq -e '.hash."md5"' | tr -d "'\"")
     sha1=$(echo $files| yq -e '.hash."sha-1"' | tr -d "'\"")
 
+    # create the directory if a file name contains nested directories
+    mkdir -p "$outputDir"/"$(dirname "$name")"
+
     # Decode the data 
     echo $data | base64 --decode > $outputDir/$name
     # compute data size
