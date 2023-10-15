@@ -25,10 +25,10 @@ while getopts ":c:i:o:j" opt; do
             ;;
         j) json=true 
            ;;
-        \?) echo -e "$help_msg" >&2 
+        \?) echo "$help_msg" >&2 
             exit 1
             ;;
-        :) echo -e "$help_msg" >&2 
+        :) echo "$help_msg" >&2 
             exit 1
             ;;        
     esac
@@ -41,7 +41,7 @@ case "$input_file" in
     *) 
         # do something if it doesn't match
         echo "Input file format error"
-        echo -e $help_msg >&2
+        echo "$help_msg" >&2
         exit 1
         ;;
 esac
