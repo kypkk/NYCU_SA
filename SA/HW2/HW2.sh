@@ -42,7 +42,7 @@ fi
 
 if [ $json ]; then
     name=$(yq -e ".name" $input_file | tr -d "'\"")
-    author=$(yq -e ".author" $input_file)
+    author=$(yq -e ".author" $input_file | tr -d "'\"")
     date=$(yq -e ".date" $input_file)
     if [ $(uname -s) == "Darwin" ]; then date=$(date -s "@$date"  -Iseconds); fi
     if [ $(uname -s) == "FreeBSD" ]; then date=$(date -r "$date" -Iseconds); fi
