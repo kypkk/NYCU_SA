@@ -1,6 +1,6 @@
 #!/bin/sh
 # HelpMessage when error
-help_msg="hw2.sh -i INPUT -o OUTPUT [-c csv|tsv] [-j]\n\nAvailable Options:\n\n-i: Input file to be decoded\n-o: Output directory\n\n-c csv|tsv: Output files.[ct]sv\n-j: Output info.json
+help_msg="hw2.sh -i INPUT -o OUTPUT [-c csv|tsv] [-j]\n\nAvailable Options:\n\n-i: Input file to be decoded\n-o: Output directory\n-c csv|tsv: Output files.[ct]sv\n-j: Output info.json
 "
 
 # errorfiles count
