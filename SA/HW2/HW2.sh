@@ -50,7 +50,7 @@ if [ $json ]; then
 fi
 
 if [ $c_t ]; then
-    echo "filename${sep}size${sep}md5${sep}sha1" > "./$outputDir/files.$c_t"
+    printf "filename${sep}size${sep}md5${sep}sha1\n" > "./$outputDir/files.$c_t"
 fi
 
 length=$(yq -e '.files | length' $input_file)
@@ -82,7 +82,7 @@ while [ $i -lt $length ]; do
     echo $error_files
 
     if [ $c_t ]; then
-        echo "${name}${sep}${size}${sep}${md5}${sep}${sha1}" >> "./$outputDir/files.$c_t"
+        printf "${name}${sep}${size}${sep}${md5}${sep}${sha1}\n" >> "./$outputDir/files.$c_t"
     fi
     i=$(expr $i + 1)
 
