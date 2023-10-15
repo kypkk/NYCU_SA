@@ -56,10 +56,11 @@ fi
 length=$(yq -e '.files | length' $input_file)
 i=0
 while [ $i -lt $length ]; do
-    name=$(yq -e ".files[$i].name" $input_file)
-    data=$(yq -e ".files[$i].data" $input_file)
-    md5=$(yq -e ".files[$i].hash.md5" $input_file)
-    sha1=$(yq -e '.files[$i].hash."sha-1"' $input_file)
+    files=$(yq -e ".files[$i]" $input_file)
+    name=$(echo $files| yq -e '.name')
+    data=$(echo $files| yq -e '.data')
+    md5=$(echo $files| yq -e '.hash."md5"')
+    sha1=$(echo $files| yq -e '.hash."sha-1"')
 
     # Decode the data 
     echo $data | base64 --decode > ./$outputDir/$name
