@@ -59,7 +59,7 @@ while [ $i -lt $length ]; do
     name=$(yq -e ".files[$i].name" $input_file)
     data=$(yq -e ".files[$i].data" $input_file)
     md5=$(yq -e ".files[$i].hash.md5" $input_file)
-    sha1=$(yq -e ".files[$i].hash.sha-1" $input_file)
+    sha1=$(yq -e '.files[$i].hash."sha-1"' $input_file)
 
     # Decode the data 
     echo $data | base64 --decode > ./$outputDir/$name
