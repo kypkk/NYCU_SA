@@ -20,7 +20,7 @@ while getopts ":c:i:o:j" opt; do
         i) input_file="$OPTARG";;
         o) outputDir="$OPTARG";;
         c)  c_t=$OPTARG
-            if [ "$c_t" = "tsv" ]; then sep="\t"; fi
+            if [ "$c_t" = "tsv" ]; then sep="$(printf '\t')"; fi
             if [ "$c_t" = "csv" ]; then sep=","; fi
             ;;
         j) json=true 
