@@ -59,8 +59,8 @@ while [ $i -lt $length ]; do
     files=$(yq -e ".files[$i]" $input_file)
     name=$(echo $files| yq -e '.name')
     data=$(echo $files| yq -e .data | tr -d "'\"")
-    md5=$(echo $files| yq -e '.hash."md5"')
-    sha1=$(echo $files| yq -e '.hash."sha-1"')
+    md5=$(echo $files| yq -e '.hash."md5"' | tr -d "'\"")
+    sha1=$(echo $files| yq -e '.hash."sha-1"' | tr -d "'\"")
 
     # Decode the data 
     echo $data | base64 --decode > ./$outputDir/$name
@@ -78,7 +78,7 @@ while [ $i -lt $length ]; do
     if [ "$computed_md5" != "$md5" ] || [ "$computed_sha1" != "$sha1" ]; then
         echo "$computed_md5 $md5"
         echo "$computed_sha1 $sha1"
-        error=$(expr $error_files+=1)
+        error_files=$(expr $error_files+=1)
     fi
     echo $error_files
 
