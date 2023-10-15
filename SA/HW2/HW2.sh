@@ -47,11 +47,11 @@ if [ $json ]; then
     if [ $(uname -s) == "Darwin" ]; then date=$(date -s "@$date"  -Iseconds); fi
     if [ $(uname -s) == "FreeBSD" ]; then date=$(date -r "$date" -Iseconds); fi
 
-    jq -n --arg name "$name" --arg author "$author" --arg date "$date" '{name: $name, author: $author, date: $date}' > "./$outputDir/info.json"
+    jq -n --arg name "$name" --arg author "$author" --arg date "$date" '{name: $name, author: $author, date: $date}' > "$outputDir/info.json"
 fi
 
 if [ $c_t ]; then
-    printf "filename${sep}size${sep}md5${sep}sha1\n" > "./$outputDir/files.$c_t"
+    printf "filename${sep}size${sep}md5${sep}sha1\n" > "$outputDir/files.$c_t"
 fi
 
 length=$(yq -e '.files | length' $input_file)
@@ -64,16 +64,16 @@ while [ $i -lt $length ]; do
     sha1=$(echo $files| yq -e '.hash."sha-1"' | tr -d "'\"")
 
     # Decode the data 
-    echo $data | base64 --decode > ./$outputDir/$name
+    echo $data | base64 --decode > $outputDir/$name
     # compute data size
-    size=$(echo ./$outputDir/$name | wc -c )
+    size=$(echo $outputDir/$name | wc -c )
 
 
     # Compute the MD5 checksum of the decoded data
-    computed_md5=$(md5sum ./$outputDir/$name | cut -d ' ' -f 1)
+    computed_md5=$(md5sum $outputDir/$name | cut -d ' ' -f 1)
 
     # Compute the SHA-1 checksum of the decoded data
-    computed_sha1=$(sha1sum ./$outputDir/$name | cut -d ' ' -f 1)
+    computed_sha1=$(sha1sum $outputDir/$name | cut -d ' ' -f 1)
 
     # Compare the computed checksums with the provided checksums
     if [ "$computed_md5" != "$md5" ] || [ "$computed_sha1" != "$sha1" ]; then
@@ -81,7 +81,7 @@ while [ $i -lt $length ]; do
     fi
 
     if [ $c_t ]; then
-        printf "${name}${sep}${size}${sep}${md5}${sep}${sha1}\n" >> "./$outputDir/files.$c_t"
+        printf "${name}${sep}${size}${sep}${md5}${sep}${sha1}\n" >> "$outputDir/files.$c_t"
     fi
     i=$(expr $i + 1)
 
