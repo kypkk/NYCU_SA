@@ -40,9 +40,9 @@ if [ ! -d $outputDir ]; then
 fi
 
 if [ $json ]; then
-    name=$(yq e ".name" $input_file)
-    author=$(yq e ".author" $input_file)
-    date=$(yq e ".date" $input_file)
+    name=$(yq -e ".name" $input_file)
+    author=$(yq -e ".author" $input_file)
+    date=$(yq -e ".date" $input_file)
     if [ $(uname -s) == "Darwin" ]; then date=$(date -s "@$date"  -Iseconds); fi
     if [ $(uname -s) == "FreeBSD" ]; then date=$(date -r "$date" -Iseconds); fi
     echo "$name $author $date"
@@ -53,13 +53,13 @@ if [ $c_t ]; then
     echo "filename${sep}size${sep}md5${sep}sha1" > "./$outputDir/files.$c_t"
 fi
 
-length=$(yq e '.files | length' $input_file)
+length=$(yq -e '.files | length' $input_file)
 i=0
 while [ $i -lt $length ]; do
-    name=$(yq e ".files[$i].name" $input_file)
-    data=$(yq e ".files[$i].data" $input_file)
-    md5=$(yq e ".files[$i].hash.md5" $input_file)
-    sha1=$(yq e ".files[$i].hash.sha-1" $input_file)
+    name=$(yq -e ".files[$i].name" $input_file)
+    data=$(yq -e ".files[$i].data" $input_file)
+    md5=$(yq -e ".files[$i].hash.md5" $input_file)
+    sha1=$(yq -e ".files[$i].hash.sha-1" $input_file)
 
     # Decode the data 
     echo $data | base64 --decode > ./$outputDir/$name
@@ -84,6 +84,7 @@ while [ $i -lt $length ]; do
     if [ $c_t ]; then
         echo "${name}${sep}${size}${sep}${md5}${sep}${sha1}" >> "./$outputDir/files.$c_t"
     fi
+    ((i+=1))
 
 done
 
