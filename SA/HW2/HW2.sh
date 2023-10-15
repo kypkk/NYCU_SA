@@ -68,10 +68,10 @@ while [ $i -lt $length ]; do
 
 
     # Compute the MD5 checksum of the decoded data
-    computed_md5=$(md5sum ./$outputDir/$name | awk '{print $1}')
+    computed_md5=$(md5sum ./$outputDir/$name | cut -d ' ' -f 1)
 
     # Compute the SHA-1 checksum of the decoded data
-    computed_sha1=$(sha1sum ./$outputDir/$name | awk '{print $1}')
+    computed_sha1=$(sha1sum ./$outputDir/$name | cut -d ' ' -f 1)
 
     # Compare the computed checksums with the provided checksums
     if [ "$computed_md5" != "$md5" ] || [ "$computed_sha1" != "$sha1" ]; then
