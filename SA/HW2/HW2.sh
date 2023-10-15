@@ -66,7 +66,7 @@ while [ $i -lt $length ]; do
     # Decode the data 
     echo $data | base64 --decode > $outputDir/$name
     # compute data size
-    size=$(echo $outputDir/$name | wc -c )
+    size=$(stat -f %z $outputDir/$name )
 
 
     # Compute the MD5 checksum of the decoded data
@@ -77,7 +77,7 @@ while [ $i -lt $length ]; do
 
     # Compare the computed checksums with the provided checksums
     if [ "$computed_md5" != "$md5" ] || [ "$computed_sha1" != "$sha1" ]; then
-        error_files=$(expr $error_files+=1)
+        error_files=$(expr $error_files + 1)
     fi
 
     if [ $c_t ]; then
