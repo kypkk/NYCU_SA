@@ -12,8 +12,8 @@ while getopts ":c:i:o:j" opt; do
         i) input_file="$OPTARG";;
         o) outputDir="$OPTARG";;
         c)  c_t=$OPTARG
-            if [[ $c_t == "tsv" ]]; then sep="\t"; fi
-            if [[ $c_t == "csv" ]]; then sep=","; fi
+            if [ $c_t == "tsv" ]; then sep="\t"; fi
+            if [ $c_t == "csv" ]; then sep=","; fi
             ;;
         j) json=true 
            ;;
@@ -26,35 +26,36 @@ while getopts ":c:i:o:j" opt; do
     esac
 done
 
-if [[ ! -n $input_file ]] && [[ $input_file != *.hw2 ]]; then
+if [ ! -n $input_file ] && [ $input_file != *.hw2 ]; then
     echo "Input file format error"
     echo $help_msg >&2
     exit 1
 fi
 
 mkdir -p $outputDir
-if [[ ! -d $outputDir ]]; then
+if [ ! -d $outputDir ]; then
     echo "Please specify an output directory"
     echo $help_msg >&2
     exit 1
 fi
 
-if [[ $json ]]; then
+if [ $json ]; then
     name=$(yq e ".name" $input_file)
     author=$(yq e ".author" $input_file)
     date=$(yq e ".date" $input_file)
-    if [[ $(uname -s) == "Darwin" ]]; then date=$(date -s "@$date"  -Iseconds); fi
-    if [[ $(uname -s) == "FreeBSD" ]]; then date=$(date -r "$date" -Iseconds); fi
+    if [ $(uname -s) == "Darwin" ]; then date=$(date -s "@$date"  -Iseconds); fi
+    if [ $(uname -s) == "FreeBSD" ]; then date=$(date -r "$date" -Iseconds); fi
     echo "$name $author $date"
     jq -n -r "{\"name\":\"$name\",\"author\":\"$author\",\"date\":\"$date\"}" > "./$outputDir/info.json"
 fi
 
-if [[ $c_t ]]; then
+if [ $c_t ]; then
     echo "filename${sep}size${sep}md5${sep}sha1" > "./$outputDir/files.$c_t"
 fi
 
 length=$(yq e '.files | length' $input_file)
-for ((i=0; i<$length; i++)); do
+i=0
+while [ $i -lt $length ]; do
     name=$(yq e ".files[$i].name" $input_file)
     data=$(yq e ".files[$i].data" $input_file)
     md5=$(yq e ".files[$i].hash.md5" $input_file)
@@ -73,14 +74,14 @@ for ((i=0; i<$length; i++)); do
     computed_sha1=$(sha1sum ./$outputDir/$name | awk '{print $1}')
 
     # Compare the computed checksums with the provided checksums
-    if [[ "$computed_md5" != "$md5" ]] || [[ "$computed_sha1" != "$sha1" ]]; then
+    if [ "$computed_md5" != "$md5" ] || [ "$computed_sha1" != "$sha1" ]; then
         echo "$computed_md5 $md5"
         echo "$computed_sha1 $sha1"
         ((error_files+=1))
     fi
     echo $error_files
 
-    if [[ $c_t ]]; then
+    if [ $c_t ]; then
         echo "${name}${sep}${size}${sep}${md5}${sep}${sha1}" >> "./$outputDir/files.$c_t"
     fi
 
