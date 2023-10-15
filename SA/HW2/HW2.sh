@@ -46,7 +46,7 @@ if [ $json ]; then
     if [ $(uname -s) == "Darwin" ]; then date=$(date -s "@$date"  -Iseconds); fi
     if [ $(uname -s) == "FreeBSD" ]; then date=$(date -r "$date" -Iseconds); fi
     echo "$name $author $date"
-    jq -n --arg name "$name" --arg author "$author" --arg date "$date" \ '{name: $name, author: $author, date: $date}' > "./$outputDir/info.json"
+    jq -n --arg name "$name" --arg author "$author" --arg date "$date" '{name: $name, author: $author, date: $date}' > "./$outputDir/info.json"
 fi
 
 if [ $c_t ]; then
