@@ -45,7 +45,7 @@ if [ $json ]; then
     date=$(yq -e ".date" $input_file)
     if [ $(uname -s) == "Darwin" ]; then date=$(date -s "@$date"  -Iseconds); fi
     if [ $(uname -s) == "FreeBSD" ]; then date=$(date -r "$date" -Iseconds); fi
-    echo "$name $author $date"
+
     jq -n --arg name "$name" --arg author "$author" --arg date "$date" '{name: $name, author: $author, date: $date}' > "./$outputDir/info.json"
 fi
 
@@ -76,11 +76,8 @@ while [ $i -lt $length ]; do
 
     # Compare the computed checksums with the provided checksums
     if [ "$computed_md5" != "$md5" ] || [ "$computed_sha1" != "$sha1" ]; then
-        echo "$computed_md5 $md5"
-        echo "$computed_sha1 $sha1"
         error_files=$(expr $error_files+=1)
     fi
-    echo $error_files
 
     if [ $c_t ]; then
         printf "${name}${sep}${size}${sep}${md5}${sep}${sha1}\n" >> "./$outputDir/files.$c_t"
@@ -89,19 +86,4 @@ while [ $i -lt $length ]; do
 
 done
 
-
-
-
-
-    
-
-
-
-
-if [ -n "$output_file" ]; then
-    echo "Output is $output_file"
-fi
-
-if [ -n "$outputDir" ]; then
-    echo ""
-fi
+return $error_files
