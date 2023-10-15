@@ -77,14 +77,14 @@ while [ $i -lt $length ]; do
     if [ "$computed_md5" != "$md5" ] || [ "$computed_sha1" != "$sha1" ]; then
         echo "$computed_md5 $md5"
         echo "$computed_sha1 $sha1"
-        ((error_files+=1))
+        error=((expr $error_files+=1))
     fi
     echo $error_files
 
     if [ $c_t ]; then
         echo "${name}${sep}${size}${sep}${md5}${sep}${sha1}" >> "./$outputDir/files.$c_t"
     fi
-    ((i+=1))
+    i=$(expr $i + 1)
 
 done
 
