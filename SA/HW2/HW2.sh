@@ -25,10 +25,10 @@ while getopts ":c:i:o:j" opt; do
             ;;
         j) json=true 
            ;;
-        \?) echo $help_msg >&2 
+        \?) echo -e $help_msg >&2 
             exit 1
             ;;
-        :) echo $help_msg >&2 
+        :) echo -e $help_msg >&2 
             exit 1
             ;;        
     esac
@@ -36,14 +36,14 @@ done
 
 if [ ! -n $input_file ] && [ $input_file != *.hw2 ]; then
     echo "Input file format error"
-    echo $help_msg >&2
+    echo -e $help_msg >&2
     exit 1
 fi
 
 mkdir -p $outputDir
 if [ ! -d $outputDir ]; then
     echo "Please specify an output directory"
-    echo $help_msg >&2
+    echo -e $help_msg >&2
     exit 1
 fi
 
