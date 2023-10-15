@@ -58,7 +58,7 @@ i=0
 while [ $i -lt $length ]; do
     files=$(yq -e ".files[$i]" $input_file)
     name=$(echo $files| yq -e '.name')
-    data=$(echo $files| yq -e '.data')
+    data=$(echo $files| yq -e .data | tr -d "'\"")
     md5=$(echo $files| yq -e '.hash."md5"')
     sha1=$(echo $files| yq -e '.hash."sha-1"')
 
