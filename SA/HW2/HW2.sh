@@ -41,7 +41,7 @@ if [ ! -d $outputDir ]; then
 fi
 
 if [ $json ]; then
-    name=$(yq -e ".name" $input_file)
+    name=$(yq -e ".name" $input_file | tr -d "'\"")
     author=$(yq -e ".author" $input_file)
     date=$(yq -e ".date" $input_file)
     if [ $(uname -s) == "Darwin" ]; then date=$(date -s "@$date"  -Iseconds); fi
@@ -58,7 +58,7 @@ length=$(yq -e '.files | length' $input_file)
 i=0
 while [ $i -lt $length ]; do
     files=$(yq -e ".files[$i]" $input_file)
-    name=$(echo $files| yq -e '.name')
+    name=$(echo $files| yq -e '.name' | tr -d "'\"")
     data=$(echo $files| yq -e .data | tr -d "'\"")
     md5=$(echo $files| yq -e '.hash."md5"' | tr -d "'\"")
     sha1=$(echo $files| yq -e '.hash."sha-1"' | tr -d "'\"")
