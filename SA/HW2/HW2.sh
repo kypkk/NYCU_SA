@@ -57,8 +57,8 @@ if [ "$json" ]; then
     name=$(yq -e ".name" "$input_file" | tr -d "'\"")
     author=$(yq -e ".author" "$input_file" | tr -d "'\"")
     date=$(yq -e ".date" "$input_file")
-    if [ "$(uname -s)" = "Darwin" ]; then date=$(date -s "@$date"  -Iseconds); fi
     if [ "$(uname -s)" = "FreeBSD" ]; then date=$(date -r "$date" -Iseconds); fi
+    if [ "$(uname -s)" = "Darwin" ]; then date=$(date -s "@$date"  -Iseconds); fi
 
     jq -n --arg name "$name" --arg author "$author" --arg date "$date" '{name: $name, author: $author, date: $date}' > "$outputDir/info.json"
 fi
@@ -82,8 +82,8 @@ while [ "$i" -lt "$length" ]; do
     # Decode the data 
     echo "$data" | base64 --decode > "$outputDir"/"$name"
     # compute data size
-    size=$(stat -f %z "$outputDir"/"$name" )
-
+    if [ "$(uname -s)" = "FreeBSD" ]; then size=$(stat -f %z "$outputDir"/"$name" ); fi
+    if [ "$(uname -s)" = "Darwin" ]; then size=$(wc -c "$outputDir"/"$name" ); fi
 
     # Compute the MD5 checksum of the decoded data
     computed_md5=$(md5sum "$outputDir"/"$name" | cut -d ' ' -f 1)
@@ -99,8 +99,11 @@ while [ "$i" -lt "$length" ]; do
     if [ "$c_t" ]; then
         printf "%s%s%s%s%s%s%s\n" "$name" "$sep" "$size" "$sep" "$md5" "$sep" "$sha1" >> "$outputDir/files.$c_t"
     fi
-    i=$(( "$i" + 1 ))
+
+    if [ "$(uname -s)" = "FreeBSD" ]; then i=$(( "$i" + 1 )); fi
+    if [ "$(uname -s)" = "Darwin" ]; then i=$(( i + 1 )); fi
 
 done
 
-return "$error_files"
+if [ "$(uname -s)" = "FreeBSD" ]; then return "$error_files"; fi
+if [ "$(uname -s)" = "Darwin" ]; then exit "$error_files"; fi
