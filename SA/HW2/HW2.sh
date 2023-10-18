@@ -67,43 +67,64 @@ if [ "$c_t" ]; then
     printf "filename%ssize%smd5%ssha1\n" "$sep" "$sep" "$sep" > "$outputDir/files.$c_t"
 fi
 
-length=$(yq -e '.files | length' "$input_file")
-i=0
-while [ "$i" -lt "$length" ]; do
-    files=$(yq -e ".files[$i]" "$input_file")
-    name=$(echo "$files"| yq -e '.name' | tr -d "'\"")
-    data=$(echo "$files"| yq -e .data | tr -d "'\"")
-    md5=$(echo "$files"| yq -e '.hash."md5"' | tr -d "'\"")
-    sha1=$(echo "$files"| yq -e '.hash."sha-1"' | tr -d "'\"")
+decode_file () { 
+    length=$(yq -e '.files | length' "$input_file")
+    i=0
 
-    # create the directory if a file name contains nested directories
-    mkdir -p "$outputDir"/"$(dirname "$name")"
+    while [ "$i" -lt "$length" ]; do
+        files=$(yq -e ".files[$i]" "$input_file")
+        name=$(echo "$files"| yq -e '.name' | tr -d "'\"")
 
-    # Decode the data 
-    echo "$data" | base64 --decode > "$outputDir"/"$name"
-    # compute data size
-    if [ "$(uname -s)" = "FreeBSD" ]; then size=$(stat -f %z "$outputDir"/"$name" ); fi
-    if [ "$(uname -s)" = "Darwin" ]; then size=$(wc -c "$outputDir"/"$name" ); fi
+        data=$(echo "$files"| yq -e .data | tr -d "'\"")
+        md5=$(echo "$files"| yq -e '.hash."md5"' | tr -d "'\"")
+        sha1=$(echo "$files"| yq -e '.hash."sha-1"' | tr -d "'\"")
 
-    # Compute the MD5 checksum of the decoded data
-    computed_md5=$(md5sum "$outputDir"/"$name" | cut -d ' ' -f 1)
+        # create the directory if a file name contains nested directories
+        mkdir -p "$outputDir"/"$(dirname "$name")"
 
-    # Compute the SHA-1 checksum of the decoded data
-    computed_sha1=$(sha1sum "$outputDir"/"$name" | cut -d ' ' -f 1)
+        # Decode the data 
+        echo "$data" | base64 --decode > "$outputDir"/"$name"
+        # compute data size
+        if [ "$(uname -s)" = "FreeBSD" ]; then size=$(stat -f %z "$outputDir"/"$name" ); fi
+        if [ "$(uname -s)" = "Darwin" ]; then size=$(wc -c "$outputDir"/"$name" ); fi
 
-    # Compare the computed checksums with the provided checksums
-    if [ "$computed_md5" != "$md5" ] || [ "$computed_sha1" != "$sha1" ]; then
-        error_files=$(( "$error_files" + 1 ))
-    fi
+        # Compute the MD5 checksum of the decoded data
+        computed_md5=$(md5sum "$outputDir"/"$name" | cut -d ' ' -f 1)
 
-    if [ "$c_t" ]; then
-        printf "%s%s%s%s%s%s%s\n" "$name" "$sep" "$size" "$sep" "$md5" "$sep" "$sha1" >> "$outputDir/files.$c_t"
-    fi
+        # Compute the SHA-1 checksum of the decoded data
+        computed_sha1=$(sha1sum "$outputDir"/"$name" | cut -d ' ' -f 1)
 
-    if [ "$(uname -s)" = "FreeBSD" ]; then i=$(( "$i" + 1 )); fi
-    if [ "$(uname -s)" = "Darwin" ]; then i=$(( i + 1 )); fi
+        # Compare the computed checksums with the provided checksums
+        if [ "$computed_md5" != "$md5" ] || [ "$computed_sha1" != "$sha1" ]; then
+            error_files=$(( "$error_files" + 1 ))
+        fi
 
+        if [ "$c_t" ]; then
+            printf "%s%s%s%s%s%s%s\n" "$name" "$sep" "$size" "$sep" "$md5" "$sep" "$sha1" >> "$outputDir/files.$c_t"
+        fi
+
+        if [ "$(uname -s)" = "FreeBSD" ]; then i=$(( "$i" + 1 )); fi
+        if [ "$(uname -s)" = "Darwin" ]; then i=$(( i + 1 )); fi
+
+    done
+}
+
+decode_file
+found_files=$(find "$outputDir" -type f -name "*.hw2")
+
+hw_length=$(echo "$found_files" | wc -l )
+if [ "$(uname -s)" = "FreeBSD" ]; then hw_length=$(( "$hw_length" + 0 )); fi
+if [ "$(uname -s)" = "Darwin" ]; then hw_length=$(( hw_length + 0 )); fi
+idx=0
+while [ "$idx" -lt "$hw_length" ]; do
+    if [ "$(uname -s)" = "FreeBSD" ]; then idx=$(( "$idx" + 1 )); fi
+    if [ "$(uname -s)" = "Darwin" ]; then idx=$(( idx + 1 )); fi
+
+    input_file=$(echo "$found_files" | tail -n +"$idx" | head -n 1)
+
+    decode_file
 done
+
 
 if [ "$(uname -s)" = "FreeBSD" ]; then return "$error_files"; fi
 if [ "$(uname -s)" = "Darwin" ]; then exit "$error_files"; fi
