@@ -96,7 +96,8 @@ decode_file () {
 
         # Compare the computed checksums with the provided checksums
         if [ "$computed_md5" != "$md5" ] || [ "$computed_sha1" != "$sha1" ]; then
-            error_files=$(( "$error_files" + 1 ))
+            if [ "$(uname -s)" = "FreeBSD" ]; then error_files=$(( "$error_files" + 1 )); fi
+            if [ "$(uname -s)" = "Darwin" ]; then error_files=$(( error_files + 1 )); fi
         fi
 
         if [ "$c_t" ]; then
@@ -126,5 +127,5 @@ while [ "$idx" -lt "$hw_length" ]; do
 done
 
 
-if [ "$(uname -s)" = "FreeBSD" ]; then return "$error_files"; fi
-if [ "$(uname -s)" = "Darwin" ]; then exit "$error_files"; fi
+if [ "$(uname -s)" = "FreeBSD" ]; then echo "$error_files"; fi
+if [ "$(uname -s)" = "Darwin" ]; then echo "$error_files"; fi
