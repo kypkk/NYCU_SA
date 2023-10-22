@@ -127,5 +127,5 @@ while [ "$idx" -lt "$hw_length" ]; do
 done
 
 
-if [ "$(uname -s)" = "FreeBSD" ]; then echo "$error_files"; fi
-if [ "$(uname -s)" = "Darwin" ]; then echo "$error_files"; fi
+if [ "$(uname -s)" = "FreeBSD" ]; then return "$error_files"; fi
+if [ "$(uname -s)" = "Darwin" ]; then exit "$error_files"; fi
