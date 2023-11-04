@@ -96,8 +96,7 @@ decode_file () {
 
         # Compare the computed checksums with the provided checksums
         if [ "$computed_md5" != "$md5" ] || [ "$computed_sha1" != "$sha1" ]; then
-            if [ "$(uname -s)" = "FreeBSD" ]; then error_files=$(( "$error_files" + 1 )); fi
-            if [ "$(uname -s)" = "Darwin" ]; then error_files=$(( error_files + 1 )); fi
+            error_files=$(( "$error_files" + 1 ))
         fi
 
         if [ "$c_t" ]; then
@@ -113,14 +112,9 @@ decode_file () {
 decode_file
 found_files=$(find "$outputDir" -type f -name "*.hw2")
 
-if [ -z "$found_files" ]; then
-    hw_length=0
-else
-    hw_length=$(echo "$found_files" | wc -l)
-fi
+hw_length=$(echo "$found_files" | wc -l )
 if [ "$(uname -s)" = "FreeBSD" ]; then hw_length=$(( "$hw_length" + 0 )); fi
 if [ "$(uname -s)" = "Darwin" ]; then hw_length=$(( hw_length + 0 )); fi
-
 idx=0
 while [ "$idx" -lt "$hw_length" ]; do
     if [ "$(uname -s)" = "FreeBSD" ]; then idx=$(( "$idx" + 1 )); fi

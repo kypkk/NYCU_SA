@@ -57,7 +57,7 @@ def run(public_dir, hidden_dir):
                 for file in new_exe_files:
                     file_path = os.path.join(public_dir, file)
                     file_uploader = pwd.getpwuid(os.stat(file_path).st_uid).pw_name
-                    os.system(f"mv {file_path} {hidden_dir}/{file}")
+                    os.system(f"sudo mv {file_path} {hidden_dir}")
                     timestamp = time.strftime('%b %d %H:%M:%S')  # Format the current time
                     log_entry = f"{timestamp} freebsd-132 {program_name}[{pid}]: {file_path} violate file detected. Uploaded by {file_uploader}.\n"
                     log.write(log_entry)
