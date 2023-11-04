@@ -1,6 +1,7 @@
 #! /usr/local/bin/python
 import os
 import pwd
+import time
 import sys
 
 def daemonize(pidfile):
@@ -43,18 +44,28 @@ def daemonize(pidfile):
     with open('/dev/null', 'a+') as f:
         os.dup2(f.fileno(), sys.stderr.fileno())
 
-def run():
-    print("daemon start")
+def run(public_dir):
+    known_exe_files = set()
     while True:
         # Main code goes here.
-        with open("/var/log/sftp_watchd.log", "a") as log:
-            for file in os.listdir("/home/sftp/public"):
-                if file.endswith(".exe"):
-                    file = f"/home/sftp/public/{file}"
-                    file_uploader = pwd.getpwuid(os.stat(file).st_uid).pw_name
-                    log.write(f"{file} violate file detected. Uploaded by {file_uploader}.")
+        current_exe_files = {file for file in os.listdir(public_dir) if file.endswith(".exe")}
+        new_exe_files = current_exe_files - known_exe_files
+        if new_exe_files:
+            with open("/var/log/sftp_watchd.log", "a") as log:
+                for file in new_exe_files:
+                    file_path = os.path.join(public_dir, file)
+                    file_uploader = pwd.getpwuid(os.stat(file_path).st_uid).pw_name
+                    log.write(f"{file_path} violate file detected. Uploaded by {file_uploader}.")
+
+            # Update the known files set
+            known_exe_files = current_exe_files
+
+        # Sleep for a while before checking again
+        time.sleep(10)
+
 
 if __name__ == "__main__":
     pidfile = '/var/run/sftp_watchd.pid'
+    public_dir = "/home/sftp/public"
     daemonize(pidfile)
-    run()
+    run(public_dir)
