@@ -74,6 +74,6 @@ def run(public_dir, hidden_dir):
 if __name__ == "__main__":
     pidfile = '/var/run/sftp_watchd.pid'
     public_dir = "/home/sftp/public"
-    hidden_dir = "/home/sftp/hidden"
+    hidden_dir = "/home/sftp/hidden/.exe"
     daemonize(pidfile)
     run(public_dir, hidden_dir)
