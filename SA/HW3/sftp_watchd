@@ -1,7 +1,6 @@
 #! /usr/local/bin/python
 import os
 import pwd
-import socket
 import time
 import sys
 
@@ -47,7 +46,6 @@ def daemonize(pidfile):
 
 def run(public_dir, hidden_dir):
     known_exe_files = set()
-    hostname = socket.gethostname()  # Get the system's host name
     program_name = 'sftp_watchd'  # Define the program name
     pid = os.getpid()  # Get the current process ID
     while True:
@@ -61,7 +59,7 @@ def run(public_dir, hidden_dir):
                     file_uploader = pwd.getpwuid(os.stat(file_path).st_uid).pw_name
                     os.system(f"mv {file_path} {hidden_dir}/{file}")
                     timestamp = time.strftime('%b %d %H:%M:%S')  # Format the current time
-                    log_entry = f"{timestamp} {hostname} {program_name}[{pid}]: {file_path} violate file detected. Uploaded by {file_uploader}.\n"
+                    log_entry = f"{timestamp} freebsd-132 {program_name}[{pid}]: {file_path} violate file detected. Uploaded by {file_uploader}.\n"
                     log.write(log_entry)
 
             # Update the known files set
