@@ -67,8 +67,7 @@ def run(public_dir, hidden_dir):
             # Update the known files set
             known_exe_files = current_exe_files
 
-        # Sleep for a while before checking again
-        time.sleep(10)
+        
 
 
 if __name__ == "__main__":
