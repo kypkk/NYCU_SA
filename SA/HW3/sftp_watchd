@@ -3,7 +3,7 @@ import os
 import pwd
 import sys
 
-def daemonize():
+def daemonize(pidfile):
     # Perform first fork.
     try:
         pid = os.fork()
@@ -29,6 +29,10 @@ def daemonize():
         sys.stderr.write(f"Fork #2 failed: {e}\n")
         sys.exit(1)
 
+    # Write the PID file
+    with open(pidfile, 'w') as f:
+        f.write(str(os.getpid()))
+
     # Redirect standard file descriptors.
     sys.stdout.flush()
     sys.stderr.flush()
@@ -40,14 +44,17 @@ def daemonize():
         os.dup2(f.fileno(), sys.stderr.fileno())
 
 def run():
+    print("daemon start")
     while True:
         # Main code goes here.
         with open("/var/log/sftp_watchd.log", "a") as log:
             for file in os.listdir("/home/sftp/public"):
                 if file.endswith(".exe"):
+                    file = f"/home/sftp/public/{file}"
                     file_uploader = pwd.getpwuid(os.stat(file).st_uid).pw_name
                     log.write(f"{file} violate file detected. Uploaded by {file_uploader}.")
 
 if __name__ == "__main__":
-    daemonize()
+    pidfile = '/var/run/sftp_watchd.pid'
+    daemonize(pidfile)
     run()
