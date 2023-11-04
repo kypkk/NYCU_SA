@@ -1,6 +1,7 @@
 #! /usr/local/bin/python
 import os
 import pwd
+import socket
 import time
 import sys
 
@@ -44,8 +45,11 @@ def daemonize(pidfile):
     with open('/dev/null', 'a+') as f:
         os.dup2(f.fileno(), sys.stderr.fileno())
 
-def run(public_dir):
+def run(public_dir, hidden_dir):
     known_exe_files = set()
+    hostname = socket.gethostname()  # Get the system's host name
+    program_name = 'sftp_watchd'  # Define the program name
+    pid = os.getpid()  # Get the current process ID
     while True:
         # Main code goes here.
         current_exe_files = {file for file in os.listdir(public_dir) if file.endswith(".exe")}
@@ -55,7 +59,10 @@ def run(public_dir):
                 for file in new_exe_files:
                     file_path = os.path.join(public_dir, file)
                     file_uploader = pwd.getpwuid(os.stat(file_path).st_uid).pw_name
-                    log.write(f"{file_path} violate file detected. Uploaded by {file_uploader}.")
+                    os.system(f"mv {file_path} {hidden_dir}/{file}")
+                    timestamp = time.strftime('%b %d %H:%M:%S')  # Format the current time
+                    log_entry = f"{timestamp} {hostname} {program_name}[{pid}]: {file_path} violate file detected. Uploaded by {file_uploader}.\n"
+                    log.write(log_entry)
 
             # Update the known files set
             known_exe_files = current_exe_files
@@ -67,5 +74,6 @@ def run(public_dir):
 if __name__ == "__main__":
     pidfile = '/var/run/sftp_watchd.pid'
     public_dir = "/home/sftp/public"
+    hidden_dir = "/home/sftp/hidden"
     daemonize(pidfile)
-    run(public_dir)
+    run(public_dir, hidden_dir)
