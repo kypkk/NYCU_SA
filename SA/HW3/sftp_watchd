@@ -1,0 +1,53 @@
+#! /usr/local/bin/python
+import os
+import pwd
+import sys
+
+def daemonize():
+    # Perform first fork.
+    try:
+        pid = os.fork()
+        if pid > 0:
+            # Exit parent process
+            sys.exit(0)
+    except OSError as e:
+        sys.stderr.write(f"Fork #1 failed: {e}\n")
+        sys.exit(1)
+
+    # Decouple from parent environment.
+    os.chdir('/')
+    os.setsid()
+    os.umask(0)
+
+    # Perform second fork.
+    try:
+        pid = os.fork()
+        if pid > 0:
+            # Exit from second parent.
+            sys.exit(0)
+    except OSError as e:
+        sys.stderr.write(f"Fork #2 failed: {e}\n")
+        sys.exit(1)
+
+    # Redirect standard file descriptors.
+    sys.stdout.flush()
+    sys.stderr.flush()
+    with open('/dev/null', 'r') as f:
+        os.dup2(f.fileno(), sys.stdin.fileno())
+    with open('/dev/null', 'a+') as f:
+        os.dup2(f.fileno(), sys.stdout.fileno())
+    with open('/dev/null', 'a+') as f:
+        os.dup2(f.fileno(), sys.stderr.fileno())
+
+def run():
+    while True:
+        # Main code goes here.
+        with open("/var/log/sftp_watchd.log", "a") as log:
+            for file in os.listdir("/home/sftp/public"):
+                if file.endswith(".exe"):
+                    file_uploader = pwd.getpwuid(os.stat(file).st_uid).pw_name
+                    log.write(f"{file} violate file detected. Uploaded by {file_uploader}.")
+
+if __name__ == "__main__":
+    daemonize()
+    run()
