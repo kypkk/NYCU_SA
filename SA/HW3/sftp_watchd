@@ -3,6 +3,18 @@ import os
 import pwd
 import time
 import sys
+import shutil
+import logging
+from logging.handlers import RotatingFileHandler
+
+def setup_logging():
+    logger = logging.getLogger('sftp_watchd')
+    logger.setLevel(logging.INFO)
+    handler = RotatingFileHandler('/var/log/sftp_watchd.log', maxBytes=1000000, backupCount=5)
+    formatter = logging.Formatter('%(asctime)s freebsd-132 %(name)s[%(process)d]: %(message)s', datefmt='%b %d %H:%M:%S')
+    handler.setFormatter(formatter)
+    logger.addHandler(handler)
+    return logger
 
 def daemonize(pidfile):
     # Perform first fork.
@@ -44,26 +56,33 @@ def daemonize(pidfile):
     with open('/dev/null', 'a+') as f:
         os.dup2(f.fileno(), sys.stderr.fileno())
 
-def run(public_dir, hidden_dir):
+def run(public_dir, hidden_dir, logger):
     known_exe_files = set()
-    program_name = 'sftp_watchd'  # Define the program name
-    pid = os.getpid()  # Get the current process ID
+
+    if not os.path.exists(hidden_dir):
+        os.makedirs(hidden_dir, exist_ok=True)
+
+    
     while True:
         # Main code goes here.
-        current_exe_files = {file for file in os.listdir(public_dir) if file.endswith(".exe")}
-        new_exe_files = current_exe_files - known_exe_files
-        if new_exe_files:
-            with open("/var/log/sftp_watchd.log", "a") as log:
+        try:
+            current_exe_files = {file for file in os.listdir(public_dir) if file.endswith(".exe")}
+            new_exe_files = current_exe_files - known_exe_files
+            if new_exe_files:
                 for file in new_exe_files:
                     file_path = os.path.join(public_dir, file)
-                    file_uploader = pwd.getpwuid(os.stat(file_path).st_uid).pw_name
-                    os.system(f"sudo mv {file_path} {hidden_dir}")
-                    timestamp = time.strftime('%b %d %H:%M:%S')  # Format the current time
-                    log_entry = f"{timestamp} freebsd-132 {program_name}[{pid}]: {file_path} violate file detected. Uploaded by {file_uploader}.\n"
-                    log.write(log_entry)
-            # Update the known files set
-            known_exe_files = current_exe_files
-
+                    hidden_file_path = os.path.join(hidden_dir, file)
+                    try:
+                        shutil.move(file_path, hidden_file_path)
+                        file_uploader = pwd.getpwuid(os.stat(hidden_file_path).st_uid).pw_name
+                        logger.info(f"{file_path} violate file detected. Uploaded by {file_uploader}.")
+                    except Exception as e:
+                        logger.error(f"Failed to move {file_path}: {e}")
+                known_exe_files = current_exe_files
+        except FileNotFoundError:
+            logger.error(f"Directory {public_dir} does not exist.")
+        except Exception as e:
+            logger.error(f"Error while monitoring: {e}")
         time.sleep(1)
         
 
@@ -74,5 +93,6 @@ if __name__ == "__main__":
     pidfile = '/var/run/sftp_watchd.pid'
     public_dir = "/home/sftp/public"
     hidden_dir = "/home/sftp/hidden/.exe"
+    logger = setup_logging()
     daemonize(pidfile)
-    run(public_dir, hidden_dir)
+    run(public_dir, hidden_dir, logger)
