@@ -73,7 +73,7 @@ def run(public_dir, hidden_dir, logger):
                     file_path = os.path.join(public_dir, file)
                     hidden_file_path = os.path.join(hidden_dir, file)
                     try:
-                        shutil.move(file_path, hidden_file_path)
+                        os.system(f"sudo mv ${file_path} ${hidden_file_path}")
                         file_uploader = pwd.getpwuid(os.stat(hidden_file_path).st_uid).pw_name
                         logger.info(f"{file_path} violate file detected. Uploaded by {file_uploader}.")
                     except Exception as e:
