@@ -3,7 +3,7 @@ import os
 import pwd
 import time
 import sys
-import shutil
+import subprocess
 import logging
 from logging.handlers import RotatingFileHandler
 
@@ -72,8 +72,9 @@ def run(public_dir, hidden_dir, logger):
                 for file in new_exe_files:
                     file_path = os.path.join(public_dir, file)
                     hidden_file_path = os.path.join(hidden_dir, file)
+                    command = f"sudo mv {file_path} {hidden_dir}"
                     try:
-                        os.system(f"sudo mv ${file_path} ${hidden_file_path}")
+                        subprocess.check_output(command, stderr=subprocess.STDOUT, shell=True)
                         file_uploader = pwd.getpwuid(os.stat(hidden_file_path).st_uid).pw_name
                         logger.info(f"{file_path} violate file detected. Uploaded by {file_uploader}.")
                     except Exception as e:
@@ -83,6 +84,7 @@ def run(public_dir, hidden_dir, logger):
             logger.error(f"Directory {public_dir} does not exist.")
         except Exception as e:
             logger.error(f"Error while monitoring: {e}")
+
         time.sleep(1)
         
 
