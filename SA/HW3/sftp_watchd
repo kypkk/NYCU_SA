@@ -72,13 +72,15 @@ def run(public_dir, hidden_dir, logger):
                 for file in new_exe_files:
                     file_path = os.path.join(public_dir, file)
                     hidden_file_path = os.path.join(hidden_dir, file)
-                    command = f"/usr/bin/sudo /bin/mv {file_path} {hidden_dir}"
+                    command = f"/usr/local/bin/sudo /bin/mv {file_path} {hidden_dir}"
                     try:
                         subprocess.check_output(command, stderr=subprocess.STDOUT, shell=True)
                         file_uploader = pwd.getpwuid(os.stat(hidden_file_path).st_uid).pw_name
                         logger.info(f"{file_path} violate file detected. Uploaded by {file_uploader}.")
+                    except subprocess.CalledProcessError as e:
+                        logger.error(f"Failed to move {file_path}: {e.output.decode()}")
                     except Exception as e:
-                        logger.error(f"Failed to move {file_path}: {e}")
+                        logger.error(f"Unexpected error: {e}")
                 known_exe_files = current_exe_files
         except FileNotFoundError:
             logger.error(f"Directory {public_dir} does not exist.")
