@@ -72,7 +72,7 @@ def run(public_dir, hidden_dir, logger):
                 for file in new_exe_files:
                     file_path = os.path.join(public_dir, file)
                     hidden_file_path = os.path.join(hidden_dir, file)
-                    command = f"sudo mv {file_path} {hidden_dir}"
+                    command = f"/usr/bin/sudo /bin/mv {file_path} {hidden_dir}"
                     try:
                         subprocess.check_output(command, stderr=subprocess.STDOUT, shell=True)
                         file_uploader = pwd.getpwuid(os.stat(hidden_file_path).st_uid).pw_name
