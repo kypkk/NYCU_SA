@@ -87,7 +87,6 @@ def run(public_dir, hidden_dir, logger):
         except Exception as e:
             logger.error(f"Error while monitoring: {e}")
 
-        time.sleep(1)
         
 
         
