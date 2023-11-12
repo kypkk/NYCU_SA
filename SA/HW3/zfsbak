@@ -7,7 +7,7 @@ function help_msg() {
 cat << EOF
 Usage:
 - create: zfsbak DATASET [ROTATION_CNT]
-- list: zfsbak -l|--list [DATASET|ID|DATASET ID]
+- list: zfsbak -l|--list [DATASET|ID|DATASET ID...]
 - delete: zfsbak -d|--delete [DATASET|ID|DATASET ID...]
 - export: zfsbak -e|--export DATASET [ID]
 - import: zfsbak -i|--import FILENAME DATASET
@@ -27,7 +27,7 @@ function zfsbak_create() {
 
 
   # Create a new snapshot
-  zfs snapshot "$snap" && echo "Snap $snap"	
+  zfs snapshot -r "$snap" && echo "Snap $snap"	
 
   # Get a list of existing snapshots, sorted by creation time
   local snapshots=($(zfsbak_list "$dataset"))
@@ -36,13 +36,14 @@ function zfsbak_create() {
   # Check if the number of snapshots exceeds the rotation count
   while [ ${#snapshots[@]} -gt $rotation ]; do
     # Delete the oldest snapshot
-    zfs destroy "${snapshots[0]}"
+    zfs destroy -r "${snapshots[0]}"
     echo "Destroy ${snapshots[0]}"
     snapshots=(${snapshots[@]:1})
   done
  }
 
 function snapshot_list() {
+  echo "$1"
   zfs list -rt snapshot -o name -s creation "$1" | sed 1d
 }
 
@@ -80,7 +81,7 @@ function zfsbak_list() {
       # Apply filters for ID and DATASET
       if { [ -z "$command" ] && ([ -z "$id" ] || [[ "$count" == *"$id"* ]]); }; then
         printf "$count\t$snapshot_dataset\t$creation_time\n"
-      else
+      elif [[ "$count" == *"$id"* ]]; then
         echo $snapshot_name  
       fi
     fi
@@ -95,17 +96,50 @@ function zfsbak_delete() {
   snapshots=(${snapshots[@]:3})
 
   for snaps in ${snapshots[@]}; do 
-    zfs destroy "$snaps" && echo "Destroy $snaps"
+    zfs destroy -r "$snaps" && echo "Destroy $snaps"
   done
 }
 
 
 function zfsbak_export() {
+  
+  command="export"
+
+  # Find the snapshot name using zfsbak_list
+  local snapshot_name=$(zfsbak_list "$@"| tail -n 1)
+
+  if [ ! -z "$snapshot_name" ]; then 
+    # Define the export file path
+    local export_file="$HOME/${snapshot_name//\//_}.zst.aes"
+
+    # Send the snapshot to a zstd compressed file
+    zfs send "$snapshot_name" | zstd > "${export_file%.aes}"
+
+    # Encrypt the compressed file
+    openssl enc -aes-256-cbc -pbkdf2 -salt -in "${export_file%.aes}" -out "$export_file" -pass pass:"$ZFSBAK_PASS"
+
+    # Remove the uncompressed file
+    rm "${export_file%.aes}"
+
+    echo "Exported $snapshot_name to $export_file"
+
+  fi
+
 
 }
 
 function zfsbak_import() {
-  echo "zfsbak_import"
+  command="import"
+
+  local filename="$1"
+  local dataset="$2"
+
+  # Decompress and load the snapshot into the dataset
+  zstd -d "$filename" | zfs receive "$dataset"
+
+  if [ $? -eq 0 ]; then
+    echo "Import "$filename" into "$dataset""
+  fi
 }
 
 function main(){
