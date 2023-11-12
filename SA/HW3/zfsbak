@@ -66,16 +66,16 @@ function zfsbak_list() {
 
   # Print the Table Title
   printf "ID\tDATASET\t\tTIME\n"
-
+  previous_item_creation_time=""
   # Call snapshot_list and process its output
-  snapshot_list "$dataset" | while read -r line; do
+  zfs list -rt snapshot -o name -s creation "$dataset" | sed 1d | while read -r line; do
     snapshot_name=$(echo "$line" | awk '{print $1}')
     snapshot_dataset=${snapshot_name%%@*}
     snapshot_id=${snapshot_name##*@}
     creation_time=${snapshot_id##*_}
-    
+
     # Filter snapshots that don't have the prefix "zfsbak_"
-    if [[ "$snapshot_id" == zfsbak_* ]] && [[ "$snapshot_dataset" == "$dataset" ]]; then
+    if [[ "$snapshot_id" == zfsbak_* ]] && [[ ! "$previous_item_creation_time" == "$creation_time" ]]; then
       count=$((count + 1))
 
       # Apply filters for ID and DATASET
@@ -85,6 +85,7 @@ function zfsbak_list() {
         echo $snapshot_name  
       fi
     fi
+    previous_item_creation_time="$creation_time"
   done
 }
 
