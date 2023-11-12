@@ -2,7 +2,7 @@
 ########################
 ##### B121556 kypkk ####
 ########################
-
+command=""
 function help_msg() {
 cat << EOF
 Usage:
@@ -20,6 +20,7 @@ function timeStamp() {
 
 
 function zfsbak_create() {
+  command="create"
   dataset="$1"
   rotation=${2:-12}
   snap="$1"@"zfsbak_"$(timeStamp)
@@ -28,9 +29,10 @@ function zfsbak_create() {
   # Create a new snapshot
   zfs snapshot "$snap" && echo "Snap $snap"	
 
-   # Get the list of existing snapshots, sorted by creation time
-  local snapshots=($(snapshot_list "$dataset"))
+  # Get a list of existing snapshots, sorted by creation time
+  local snapshots=($(zfsbak_list "$dataset"))
 
+  snapshots=(${snapshots[@]:3})
   # Check if the number of snapshots exceeds the rotation count
   while [ ${#snapshots[@]} -gt $rotation ]; do
     # Delete the oldest snapshot
@@ -38,7 +40,7 @@ function zfsbak_create() {
     echo "Destroy ${snapshots[0]}"
     snapshots=(${snapshots[@]:1})
   done
-}
+ }
 
 function snapshot_list() {
   zfs list -rt snapshot -o name -s creation "$1" | sed 1d
@@ -76,19 +78,30 @@ function zfsbak_list() {
       count=$((count + 1))
 
       # Apply filters for ID and DATASET
-      if { [ -z "$id" ] || [[ "$count" == *"$id"* ]]; }; then
-        printf "%d\t%s\t%s\n" "$count" "$snapshot_dataset" "$creation_time"
+      if { [ -z "$command" ] && ([ -z "$id" ] || [[ "$count" == *"$id"* ]]); }; then
+        printf "$count\t$snapshot_dataset\t$creation_time\n"
+      else
+        echo $snapshot_name  
       fi
     fi
   done
 }
 
 function zfsbak_delete() {
-  echo "zfsbak_delete"
+
+  command="delete"
+  local snapshots=($(zfsbak_list $@))
+  
+  snapshots=(${snapshots[@]:3})
+
+  for snaps in ${snapshots[@]}; do 
+    zfs destroy "$snaps" && echo "Destroy $snaps"
+  done
 }
 
+
 function zfsbak_export() {
-  echo "zfsbak_export"
+
 }
 
 function zfsbak_import() {
