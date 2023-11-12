@@ -1,0 +1,114 @@
+#! /usr/local/bin/bash
+########################
+##### B121556 kypkk ####
+########################
+
+function help_msg() {
+cat << EOF
+Usage:
+- create: zfsbak DATASET [ROTATION_CNT]
+- list: zfsbak -l|--list [DATASET|ID|DATASET ID]
+- delete: zfsbak -d|--delete [DATASET|ID|DATASET ID...]
+- export: zfsbak -e|--export DATASET [ID]
+- import: zfsbak -i|--import FILENAME DATASET
+EOF
+}
+
+function timeStamp() {
+  date '+%Y-%m-%d-%H:%M:%S'
+}
+
+
+function zfsbak_create() {
+  dataset="$1"
+  rotation=${2:-12}
+  snap="$1"@"zfsbak_"$(timeStamp)
+
+
+  # Create a new snapshot
+  zfs snapshot "$snap" && echo "Snap $snap"	
+
+   # Get the list of existing snapshots, sorted by creation time
+  local snapshots=($(snapshot_list "$dataset"))
+
+  # Check if the number of snapshots exceeds the rotation count
+  while [ ${#snapshots[@]} -gt $rotation ]; do
+    # Delete the oldest snapshot
+    zfs destroy "${snapshots[0]}"
+    echo "Destroy ${snapshots[0]}"
+    snapshots=(${snapshots[@]:1})
+  done
+}
+
+function snapshot_list() {
+  zfs list -rt snapshot -o name -s creation "$1" | sed 1d
+}
+
+function zfsbak_list() {
+
+  local dataset="${1-mypool}"
+  local id=""
+  local count=0
+
+  # Check if the first argument is an ID (numeric)
+  if [[ "$1" =~ ^[0-9]+$ ]]; then
+    id="$dataset"
+    dataset="mypool"
+  fi
+
+  # If two arguments are provided, the second is the ID
+  if [ $# -eq 2 ]; then
+    id="$2"
+  fi
+
+  # Print the Table Title
+  printf "ID\tDATASET\t\tTIME\n"
+
+  # Call snapshot_list and process its output
+  snapshot_list "$dataset" | while read -r line; do
+    snapshot_name=$(echo "$line" | awk '{print $1}')
+    snapshot_dataset=${snapshot_name%%@*}
+    snapshot_id=${snapshot_name##*@}
+    creation_time=${snapshot_id##*_}
+    
+    # Filter snapshots that don't have the prefix "zfsbak_"
+    if [[ "$snapshot_id" == zfsbak_* ]] && [[ "$snapshot_dataset" == "$dataset" ]]; then
+      count=$((count + 1))
+
+      # Apply filters for ID and DATASET
+      if { [ -z "$id" ] || [[ "$count" == *"$id"* ]]; }; then
+        printf "%d\t%s\t%s\n" "$count" "$snapshot_dataset" "$creation_time"
+      fi
+    fi
+  done
+}
+
+function zfsbak_delete() {
+  echo "zfsbak_delete"
+}
+
+function zfsbak_export() {
+  echo "zfsbak_export"
+}
+
+function zfsbak_import() {
+  echo "zfsbak_import"
+}
+
+function main(){
+  case "$1" in
+    -l|--list)   shift; zfsbak_list   "$@" ;;
+    -d|--delete) shift; zfsbak_delete "$@" ;;
+    -e|--export) shift; zfsbak_export "$@" ;;
+    -i|--import) shift; zfsbak_import "$@" ;;
+    *)
+      if [ $# -eq 0 ]; then
+        help_msg
+      else
+        zfsbak_create "$@"
+      fi
+      ;;
+  esac
+}
+
+main "$@"
