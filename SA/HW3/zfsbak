@@ -126,7 +126,7 @@ function zfsbak_export() {
     local export_file=~/"$(echo "$snapshot_name" | sed "s/\//_/g").zst.aes"
     
      # Send the snapshot to a zstd compressed file
-    zfs send "$snapshot_name" | zstd -r > "${export_file%.aes}"
+    zfs send -R "$snapshot_name" | zstd > "${export_file%.aes}"
 
     # Encrypt the compressed file
     openssl enc -aes-256-cbc -pbkdf2 -in "${export_file%.aes}" -out "$export_file" -pass pass:"$ZFSBAK_PASS"
