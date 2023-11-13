@@ -67,25 +67,38 @@ function zfsbak_list() {
   # Print the Table Title
   printf "ID\tDATASET\t\tTIME\n"
   previous_item_creation_time=""
+  previous_item_dataset=""
   # Call snapshot_list and process its output
   zfs list -rt snapshot -o name -s creation "$dataset" | sed 1d | while read -r line; do
     snapshot_name=$(echo "$line" | awk '{print $1}')
     snapshot_dataset=${snapshot_name%%@*}
     snapshot_id=${snapshot_name##*@}
     creation_time=${snapshot_id##*_}
+    part1=$(echo "$snapshot_dataset" | cut -d'/' -f1,2)
+    part2=$(echo "$previous_item_dataset" | cut -d'/' -f1,2)
 
-    # Filter snapshots that don't have the prefix "zfsbak_"
-    if [[ "$snapshot_id" == zfsbak_* ]] && [[ ! "$previous_item_creation_time" == "$creation_time" ]]; then
+    if [[ "$command" == "delete" ]]; then
       count=$((count + 1))
-
-      # Apply filters for ID and DATASET
-      if { [ -z "$command" ] && ([ -z "$id" ] || [[ "$count" == *"$id"* ]]); }; then
-        printf "$count\t$snapshot_dataset\t$creation_time\n"
-      elif [[ "$count" == *"$id"* ]]; then
-        echo $snapshot_name  
+      if [[ "$count" == *"$id"* ]]; then
+        echo $snapshot_name
       fi
+    else
+
+      # Filter snapshots that don't have the prefix "zfsbak_"
+      if [[ "$snapshot_id" == zfsbak_* ]]; then
+        if [[ "$creation_time" == "$previous_item_creation_time" && ! "$part1" == "$part2" ]] || [[ ! "$creation_time" == "$previous_item_creation_time" ]];then
+          count=$((count + 1))
+          # Apply filters for ID and DATASET
+          if { [ -z "$command" ] && ([ -z "$id" ] || [[ "$count" == *"$id"* ]]); }; then
+           printf "$count\t$snapshot_dataset\t$creation_time\n"
+          elif [[ "$count" == *"$id"* ]]; then
+            echo $snapshot_name  
+          fi
+        fi
+      fi
+      previous_item_creation_time="$creation_time"
+      previous_item_dataset="$snapshot_dataset"
     fi
-    previous_item_creation_time="$creation_time"
   done
 }
 
@@ -95,9 +108,8 @@ function zfsbak_delete() {
   local snapshots=($(zfsbak_list $@))
   
   snapshots=(${snapshots[@]:3})
-
   for snaps in ${snapshots[@]}; do 
-    zfs destroy -r "$snaps" && echo "Destroy $snaps"
+    zfs destroy  "$snaps" && echo "Destroy $snaps"
   done
 }
 
@@ -107,22 +119,19 @@ function zfsbak_export() {
   command="export"
 
   # Find the snapshot name using zfsbak_list
-  local snapshot_name=$(zfsbak_list "$@"| tail -n 1)
+  local snapshot_name=$(zfsbak_list "$@"| sed 1d)
 
   if [ ! -z "$snapshot_name" ]; then 
     # Define the export file path
-    local export_file="$HOME/${snapshot_name//\//_}.zst.aes"
-
-    # Send the snapshot to a zstd compressed file
-    zfs send "$snapshot_name" | zstd > "${export_file%.aes}"
+    local export_file=~/"$(echo "$snapshot_name" | sed "s/\//_/g").zst.aes"
+    
+     # Send the snapshot to a zstd compressed file
+    zfs send "$snapshot_name" | zstd -r > "${export_file%.aes}"
 
     # Encrypt the compressed file
-    openssl enc -aes-256-cbc -pbkdf2 -salt -in "${export_file%.aes}" -out "$export_file" -pass pass:"$ZFSBAK_PASS"
-
-    # Remove the uncompressed file
-    rm "${export_file%.aes}"
-
-    echo "Exported $snapshot_name to $export_file"
+    openssl enc -aes-256-cbc -pbkdf2 -in "${export_file%.aes}" -out "$export_file" -pass pass:"$ZFSBAK_PASS"
+    
+    echo "Export $snapshot_name to $export_file"
 
   fi
 
@@ -134,13 +143,16 @@ function zfsbak_import() {
 
   local filename="$1"
   local dataset="$2"
+  
+  filename="${filename/#\~//home/judge}"
 
   # Decompress and load the snapshot into the dataset
-  zstd -d "$filename" | zfs receive "$dataset"
+  zstd -rd < "$filename" | zfs receive "$dataset"
 
-  if [ $? -eq 0 ]; then
-    echo "Import "$filename" into "$dataset""
-  fi
+
+
+  echo "Import "$filename" to "$dataset""
+
 }
 
 function main(){
