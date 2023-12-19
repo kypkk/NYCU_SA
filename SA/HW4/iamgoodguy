@@ -1,0 +1,14 @@
+#! /usr/local/bin/zsh
+function main(){
+  if [ $# -lt 3 ] || [ "$2" != "-p" ] || { [ "$3" != "ssh" ] && [ "$3" != "web" ]; }; then
+    >&2 echo "Usage：iamgoodguy <IP> -p <ssh|web>"
+    exit 255
+  else
+    case "$3" in
+      web) fail2ban-client set nginx unbanip $1 ;;
+      ssh) fail2ban-client set sshd unbanip $1 ;;
+    esac
+  fi
+}
+
+main "$@"
