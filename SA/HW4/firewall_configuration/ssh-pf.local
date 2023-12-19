@@ -1,0 +1,9 @@
+# /usr/local/etc/fail2ban/jail.d/ssh-pf.local
+[sshd]
+enabled = true
+filter = sshd
+action = pf[name=SSH, port=ssh, protocol=tcp]
+logpath = /var/log/auth.log
+maxretry = 3
+findtime  = 300
+bantime = 60

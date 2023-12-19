@@ -1,0 +1,10 @@
+# /usr/local/etc/fail2ban/jail.d/nginx-pf.local
+[nginx] # -> this is the jail name
+enabled = true # -> enable
+filter = nginx-http-auth # use the fail2ban filter configuration for nginx under the filter dir
+action = pf
+logpath = /home/judge/log/error.log # watch error log for nginx
+# If there are 3 fails under 5m from the same IP ban it for 60s
+findtime = 5m
+bantime = 60
+maxretry = 3
